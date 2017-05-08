@@ -1,0 +1,36 @@
+{% extends "grace/base.html" %}
+{% load tethys_gizmos %}
+{% load staticfiles %}
+{% block styles %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'tethys_gizmos/vendor/openlayers/ol.css' %}" type="text/css">
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+{% endblock %}
+{% block app_navigation_items %}
+  <li class="title">App Navigation</li>
+  <li {% if request.path == '/apps/grace/' %} class="active" {% endif %}><a href="{% url 'grace:home' %}">Instructions</a></li>
+  <li {% if 'nepal-graph' in request.path  %} class="active" {% endif %}><a href="{% url 'grace:nepal-graph' %}">Nepal Graph</a></li>
+<br/>
+<div id="day_selector">
+{% gizmo select_input select_layer %}
+</div>
+<button type="button" id="view-animation" class="view-animation btn-primary">View Animation</button>
+<button type="button" id="view-timestep" class="view-timestep btn-primary hidden">View Timestep</button>
+{% endblock %}
+{% block global_scripts %}
+{{ block.super }}
+<script src="{% static 'tethys_gizmos/vendor/openlayers/ol.js' %}" type="text/javascript"></script>
+{% endblock %}
+
+{% block app_content %}
+
+<div id="map" class="map"></div>
+<div id="popup" class="popup"></div>
+    {% gizmo plot_view grace_plot %}
+<div id="layers" name="layers" data-layers="{{layers_json}}" data-range="{{range}}" style="display:none;"></div>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'grace/js/nepal_graph.js' %}" type="text/javascript"></script>
+{% endblock %}

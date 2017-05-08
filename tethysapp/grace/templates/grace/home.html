@@ -1,22 +1,6 @@
 {% extends "grace/base.html" %}
 {% load tethys_gizmos %}
 
-{% block app_navigation_items %}
-  <li class="title">Regions</li>
-  <li{% if not reg_id %} class="active"{% endif %}>
-    <a href="{% url 'grace:home' %}">Instructions</a>
-  </li>
-  <li{% if reg_id == 'Nepal' %} class="active"{% endif %}>
-    <a href="{% url 'grace:home_graph' id='Nepal' %}">Nepal</a>
-  </li>
-  <li{% if reg_id == 'Reg12' %} class="active"{% endif %}>
-    <a href="{% url 'grace:home_graph' id='Reg12' %}">Region 12</a>
-  </li>
-  <li{% if reg_id == 'Reg18' %} class="active"{% endif %}>
-    <a href="{% url 'grace:home_graph' id='Reg18' %}">Region 18</a>
-  </li>
-{% endblock %}
-
 {% block app_content %}
   {% if not reg_id %} 
     <h1>Welcome</h1>
@@ -26,9 +10,4 @@
     {% gizmo map_view map_options %}
     {% gizmo plot_view grace_plot %}
   {% endif %}
-{% endblock %}
-
-{% block app_actions %}
-  <a href="" class="btn btn-default">Next</a>
-  <a href="" class="btn btn-default">Back</a>
 {% endblock %}

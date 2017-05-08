@@ -30,6 +30,9 @@ class Grace(TethysAppBase):
                      UrlMap(name='home_graph',
                            url='grace/home/{id}',
                            controller='grace.controllers.home_graph'),
+                    UrlMap(name='nepal-graph',
+                           url='grace/nepal-graph',
+                           controller='grace.controllers.nepal_graph'),
                 )
 
         return url_maps
