@@ -17,7 +17,8 @@ var LIBRARY_OBJECT = (function() {
     /************************************************************************
      *                      MODULE LEVEL / GLOBAL VARIABLES
      *************************************************************************/
-    var current_layer,
+    var chart,
+        current_layer,
         element,
         layers,
         layers_dict,
@@ -29,6 +30,7 @@ var LIBRARY_OBJECT = (function() {
         range,
         range_min,
         range_max,
+        tracker,
         wms_source,
         wms_layer;
 
@@ -38,7 +40,7 @@ var LIBRARY_OBJECT = (function() {
     /************************************************************************
      *                    PRIVATE FUNCTION DECLARATIONS
      *************************************************************************/
-    var add_wms,init_events,init_map,init_vars;
+    var add_wms,init_slider,init_events,init_map,init_vars,update_wms,graph_animation;
 
 
     /************************************************************************
@@ -50,9 +52,11 @@ var LIBRARY_OBJECT = (function() {
         gs_layer_list = JSON.parse(gs_layer_json);
         range = $layers_element.attr('data-range');
         range = JSON.parse(range);
-        // range_max = JSON.parse(range[1]);
+        tracker = $layers_element.attr('data-tracker');
+        tracker = JSON.parse(tracker);
         range_min = range[0];
         range_max = range[1];
+        chart = $(".highcharts-plot").highcharts();
     };
 
 
@@ -213,20 +217,82 @@ var LIBRARY_OBJECT = (function() {
 
     };
 
-    $("#view-animation").click(function(){
-        $("#day_selector").hide();
-        $("#view-animation").hide();
-        $("#view-timestep").removeClass("hidden");
+    update_wms = function(date_str){
         map.removeLayer(wms_layer);
-    });
+        var layer_name = 'grace:'+date_str;
+        var sld_string = '<StyledLayerDescriptor version="1.0.0"><NamedLayer><Name>'+layer_name+'</Name><UserStyle><FeatureTypeStyle><Rule>\
+        <RasterSymbolizer> \
+        <ColorMap> \
+        <ColorMapEntry color="#000000" quantity="'+range_min+'" label="nodata" opacity="0.0" /> \
+        <ColorMapEntry color="#FF0000" quantity="0" label="label1" opacity="0.4"/>\
+        <ColorMapEntry color="#0000FF" quantity="'+range_max+'" label="label2" opacity="0.4"/>\
+        </ColorMap>\
+        </RasterSymbolizer>\
+        </Rule>\
+        </FeatureTypeStyle>\
+        </UserStyle>\
+        </NamedLayer>\
+        </StyledLayerDescriptor>';
 
-    $("#view-timestep").click(function(){
-        $("#day_selector").show();
-        $("#view-animation").show();
-        $("#view-timestep").addClass("hidden");
-        add_wms();
-    });
+        wms_source = new ol.source.TileWMS({
+            url: 'http://127.0.0.1:8181/geoserver/wms',
+            params: {'LAYERS':layer_name,'SLD_BODY':sld_string},
+            serverType: 'geoserver',
+            crossOrigin: 'Anonymous'
+        });
 
+        wms_layer = new ol.layer.Tile({
+            source: wms_source
+        });
+
+        map.addLayer(wms_layer);
+        map.render();
+
+    };
+
+    // $("#view-animation").click(function(){
+    //     $("#day_selector").hide();
+    //     $("#view-animation").hide();
+    //     $("#view-timestep").removeClass("hidden");
+    //     map.removeLayer(wms_layer);
+    //     generate_slider();
+    // });
+    //
+    // $("#view-timestep").click(function(){
+    //     $("#day_selector").show();
+    //     $("#view-animation").show();
+    //     $("#view-timestep").addClass("hidden");
+    //     add_wms();
+    // });
+
+    init_slider = function(){
+
+        $( "#slider" ).slider({
+            value:1,
+            min: 0,
+            max: gs_layer_list.length - 1,
+            step: 1, //Assigning the slider step based on the depths that were retrieved in the controller
+            animate:"fast",
+            slide: function( event, ui ) {
+                var date_text = $("#select_layer option")[ui.value].text;
+                $( "#grace-date" ).val(date_text); //Get the value from the slider
+                var date_value = $("#select_layer option")[ui.value].value;
+                update_wms(date_value);
+            }
+        });
+
+    };
+    graph_animation = function(){
+        // var ;
+        // // console.log(chart.series[0].data[0]);
+        // if(chart.series[1].data[0].x > 1471737600000.0){
+        //     var x = 1018915200000.0;
+        // }else{
+        //     var x = chart.series[1].data[0].x + 114717376000;
+        //     chart.series[1].setData([[x,-36],[x,36]]);
+        //     setTimeout(graph_animation,1000);
+        // }
+    };
 
     /************************************************************************
      *                        DEFINE PUBLIC INTERFACE
@@ -247,6 +313,8 @@ var LIBRARY_OBJECT = (function() {
         init_map();
         init_events();
         init_vars();
+        init_slider();
+        setTimeout(graph_animation,1000);
 
         $("#select_layer").change(function(){
             add_wms();
@@ -255,7 +323,40 @@ var LIBRARY_OBJECT = (function() {
             // map.addLayer(layers_dict[lyr_str]);
         }).change();
 
+        // $("#slider").on("slidechange", function(event, ui) {
+        //
+        //               $( "#grace-date" ).val(result['map_forecast'][ui.value - 1][0]); //The text below the slider
+        //               var decimal_value = range_value.toString().split(".").join("");
+        //
+        //           });
 
+        var animationDelay = 1000;
+        var sliderInterval = {};
+
+        $(".btn-run").on("click", function() {
+            //Set the slider value to the current value to start the animation at the correct point.
+
+            var sliderVal = $("#slider").slider("value");
+            sliderInterval = setInterval(function() {
+                sliderVal += 1;
+                $("#slider").slider("value", sliderVal);
+                if (sliderVal===gs_layer_list.length - 1) sliderVal=0;
+            }, animationDelay);
+        });
+        $(".btn-stop").on("click", function() {
+                //Call clearInterval to stop the animation.
+                clearInterval(sliderInterval);
+            });
+
+        $("#slider").on("slidechange", function(event, ui) {
+            var x = tracker[ui.value];
+            chart.series[1].setData([[x,-50],[x,50]]);
+            var date_text = $("#select_layer option")[ui.value].text;
+            $( "#grace-date" ).val(date_text); //Get the value from the slider
+            var date_value = $("#select_layer option")[ui.value].value;
+            update_wms(date_value);
+
+        });
     });
 
     return public_interface;

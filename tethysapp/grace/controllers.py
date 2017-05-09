@@ -6,7 +6,7 @@ from datetime import datetime
 from tethys_sdk.services import get_spatial_dataset_engine
 import urlparse
 from grace import *
-import json
+import json,time
 
 @login_required()
 def home(request):
@@ -24,7 +24,7 @@ def home(request):
     context = {}
 
     return render(request, 'grace/home.html', context)
-    
+
 @login_required
 def nepal_graph(request):
 
@@ -43,14 +43,21 @@ def nepal_graph(request):
 
     volume_time_series = []
     volume = []
+    x_tracker = []
     formatter_string = "%m/%d/%Y"
     for item in csvlist:
         mydate = datetime.datetime.strptime(item[0], formatter_string)
+        mydate = time.mktime(mydate.timetuple())*1000
         volume_time_series.append([mydate, float(item[1])])
         volume.append(float(item[1]))
+        x_tracker.append(mydate)
 
     range = [round(min(volume),2),round(max(volume),2)]
     range = json.dumps(range)
+
+    print len(x_tracker),x_tracker[0],min(x_tracker),max(x_tracker)
+
+
 
     # Configure the time series Plot View
     grace_plot = TimeSeries(
@@ -59,11 +66,16 @@ def nepal_graph(request):
         y_axis_title='Volume',
         y_axis_units='cm',
         series=[
-           {
-               'name': 'Change in Volume',
-               'color': '#0066ff',
-               'data': volume_time_series,
-           },
+            {
+                'name': 'Change in Volume',
+                'color': '#0066ff',
+                'data': volume_time_series,
+            },
+            {
+                'name':'Tracker',
+                'color': '#ff0000',
+                'data':[[min(x_tracker),-50],[min(x_tracker),50]]
+            },
         ],
         width='100%',
         height='300px'
@@ -84,6 +96,7 @@ def nepal_graph(request):
         date_str = date_str.strftime("%Y %B %d")
         grace_layer_options.append([date_str,store])
 
+    slider_max = len(grace_layer_options)
 
     select_layer = SelectInput(display_text='Select a day',
                                name='select_layer',
@@ -97,8 +110,10 @@ def nepal_graph(request):
         legend_list = list(reader)
 
     legend_json = json.dumps(legend_list)
+    x_tracker = json.dumps(x_tracker)
 
-    context = {'grace_plot': grace_plot,'select_layer':select_layer,'layers_json':legend_json,'range':range}
+    context = {'grace_plot': grace_plot,'select_layer':select_layer,'layers_json':legend_json,'range':range,'slider_max':slider_max,'x_tracker':x_tracker}
+
     return render(request, 'grace/nepal_graph.html', context)
 
 @login_required
@@ -106,10 +121,10 @@ def home_graph(request, id):
     """
     Controller for home page to display a graph and map.
     """
-    
+
     """
     SET UP THE MAP OPTIONS
-    """   
+    """
 
     '''
     QUERY GEOSERVER TO GET THE LAYER CORRESPONDING TO ID

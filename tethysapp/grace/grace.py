@@ -123,7 +123,6 @@ def create_geotiffs(file_dir,geotiff_dir):
                 # Delete the temp shapefile dir after uploading the shapefile
                 if temp_dir is not None:
                     if os.path.exists(temp_dir):
-                        print "Moving to the next"
                         shutil.rmtree(temp_dir)
 
 #Get info from the netCDF file. This info will be used to convert the shapefile to a raster layer
