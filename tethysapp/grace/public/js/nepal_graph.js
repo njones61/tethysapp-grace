@@ -40,7 +40,7 @@ var LIBRARY_OBJECT = (function() {
     /************************************************************************
      *                    PRIVATE FUNCTION DECLARATIONS
      *************************************************************************/
-    var add_wms,init_slider,init_events,init_map,init_vars,update_wms,graph_animation;
+    var add_wms,init_slider,init_events,init_map,init_vars,update_wms,graph_animation,add_life;
 
 
     /************************************************************************
@@ -210,7 +210,7 @@ var LIBRARY_OBJECT = (function() {
         });
 
         map.addLayer(wms_layer);
-        map.render();
+        // map.render();
         // layers_dict[layer_name] = wms_layer;
 
         // });
@@ -235,7 +235,7 @@ var LIBRARY_OBJECT = (function() {
         </StyledLayerDescriptor>';
 
         wms_source = new ol.source.TileWMS({
-            url: 'http://127.0.0.1:8181/geoserver/wms',
+            url: 'http://tethys.byu.edu:8181/geoserver/wms',
             params: {'LAYERS':layer_name,'SLD_BODY':sld_string},
             serverType: 'geoserver',
             crossOrigin: 'Anonymous'
@@ -246,8 +246,38 @@ var LIBRARY_OBJECT = (function() {
         });
 
         map.addLayer(wms_layer);
-        map.render();
+        // map.render();
 
+    };
+
+    add_life = function(){
+         var layer_name = 'test:'+'life';
+        var sld_string = '<StyledLayerDescriptor version="1.0.0"><NamedLayer><Name>'+layer_name+'</Name><UserStyle><FeatureTypeStyle><Rule>\
+        <RasterSymbolizer> \
+        <ColorMap> \
+        <ColorMapEntry color="#000000" quantity="'+range_min+'" label="nodata" opacity="0.0" /> \
+        <ColorMapEntry color="#FF0000" quantity="0" label="label1" opacity="0.4"/>\
+        <ColorMapEntry color="#0000FF" quantity="'+range_max+'" label="label2" opacity="0.4"/>\
+        </ColorMap>\
+        </RasterSymbolizer>\
+        </Rule>\
+        </FeatureTypeStyle>\
+        </UserStyle>\
+        </NamedLayer>\
+        </StyledLayerDescriptor>';
+
+        var global_source = new ol.source.TileWMS({
+            url: 'http://tethys.byu.edu:8181/geoserver/wms',
+            params: {'LAYERS':layer_name,'SLD_BODY':sld_string},
+            serverType: 'geoserver',
+            crossOrigin: 'Anonymous'
+        });
+
+        var global_layer = new ol.layer.Tile({
+            source: global_source
+        });
+
+        map.addLayer(global_layer);
     };
 
     // $("#view-animation").click(function(){
@@ -314,7 +344,6 @@ var LIBRARY_OBJECT = (function() {
         init_events();
         init_vars();
         init_slider();
-        setTimeout(graph_animation,1000);
 
         $("#select_layer").change(function(){
             add_wms();

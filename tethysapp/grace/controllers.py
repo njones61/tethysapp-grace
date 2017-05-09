@@ -6,6 +6,7 @@ from datetime import datetime
 from tethys_sdk.services import get_spatial_dataset_engine
 import urlparse
 from grace import *
+from utilities import *
 import json,time
 
 @login_required()
@@ -13,14 +14,24 @@ def home(request):
     """
     Controller for the app home page.
     """
-    # file_dir = '/home/tethys/geotiff/'
+    # file_dir = '/home/tethys/geotiff_clipped/'
+    # output_dir = '/home/tethys/geotiff_global/'
+
+    # create_global_geotiffs(file_dir,output_dir)
+    # infile = '/home/tethys/netcdf/grace.nc'
+    # var_name = 'lwe_thickness'
+    # xsize, ysize, GeoT, Projection, NDV = get_netcdf_info_global(infile,var_name)
+    # create_global_tiff(var_name,xsize,ysize,GeoT,Projection)
+
+    # create_geotiffs(file_dir,output_dir)
     # region = 'nepal'
-    # geoserver_rest_url = 'http://127.0.0.1:8181/geoserver/rest'
+    # geoserver_rest_url = 'http://tethys.byu.edu:8181/geoserver/rest'
     # workspace = 'grace'
     # upload_tiff(file_dir, region, geoserver_rest_url, workspace)
-    file_dir = '/home/tethys/netcdf/'
-    output_dir = '/home/tethys/'
-    get_max_min(file_dir,output_dir)
+    # file_dir = '/home/tethys/netcdf/'
+    # output_dir = '/home/tethys/'
+    # get_max_min(file_dir,output_dir)
+    # clip_raster()
     context = {}
 
     return render(request, 'grace/home.html', context)
@@ -54,10 +65,6 @@ def nepal_graph(request):
 
     range = [round(min(volume),2),round(max(volume),2)]
     range = json.dumps(range)
-
-    print len(x_tracker),x_tracker[0],min(x_tracker),max(x_tracker)
-
-
 
     # Configure the time series Plot View
     grace_plot = TimeSeries(
