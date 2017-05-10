@@ -5,9 +5,10 @@ import csv, os
 from datetime import datetime
 from tethys_sdk.services import get_spatial_dataset_engine
 import urlparse
-from grace import *
-from utilities import *
+#from grace import *
+#from utilities import *
 import json,time
+from .app import Grace
 
 @login_required()
 def home(request):
@@ -40,13 +41,13 @@ def home(request):
 def nepal_graph(request):
 
     #Creating the Chart
-    project_directory = os.path.dirname(__file__)
-    user_workspace = os.path.join(project_directory, 'workspaces', 'user_workspaces')
 
-    if not os.path.exists(user_workspace):
-        os.makedirs(user_workspace)
+    user_workspace = Grace.get_app_workspace()
+    print user_workspace
+    csv_file = os.path.join(user_workspace.path, 'output/Nepal/hydrograph.csv')
 
-    csv_file = os.path.join(user_workspace, 'output/Nepal/hydrograph.csv')
+    print csv_file
+    #print project_directory,user_workspace,csv_file
 
     with open(csv_file, 'rb') as f:
         reader = csv.reader(f)
@@ -57,7 +58,7 @@ def nepal_graph(request):
     x_tracker = []
     formatter_string = "%m/%d/%Y"
     for item in csvlist:
-        mydate = datetime.datetime.strptime(item[0], formatter_string)
+        mydate = datetime.strptime(item[0], formatter_string)
         mydate = time.mktime(mydate.timetuple())*1000
         volume_time_series.append([mydate, float(item[1])])
         volume.append(float(item[1]))
@@ -93,13 +94,13 @@ def nepal_graph(request):
     stores = geoserver_engine.list_stores(workspace='grace')
 
     grace_layer_options = []
-    sorted_stores = sorted(stores['result'],key=lambda x:datetime.datetime.strptime(x,'%Y_%m_%d_nepal'))
+    sorted_stores = sorted(stores['result'],key=lambda x:datetime.strptime(x,'%Y_%m_%d_nepal'))
     for store in sorted_stores:
 
         year = int(store.split('_')[0])
         month = int(store.split('_')[1])
         day = int(store.split('_')[2])
-        date_str = datetime.datetime(year,month,day)
+        date_str = datetime(year,month,day)
         date_str = date_str.strftime("%Y %B %d")
         grace_layer_options.append([date_str,store])
 
@@ -109,7 +110,7 @@ def nepal_graph(request):
                                name='select_layer',
                                multiple=False,
                                options=grace_layer_options,)
-    legend_file = os.path.join(user_workspace, 'output/Nepal/legend.csv')
+    legend_file = os.path.join(user_workspace.path, 'output/Nepal/legend.csv')
 
 
     with open(legend_file, 'rb') as f:
