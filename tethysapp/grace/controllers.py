@@ -43,11 +43,10 @@ def nepal_graph(request):
     #Creating the Chart
 
     user_workspace = Grace.get_app_workspace()
-    print user_workspace
+
     csv_file = os.path.join(user_workspace.path, 'output/Nepal/hydrograph.csv')
 
-    print csv_file
-    #print project_directory,user_workspace,csv_file
+
 
     with open(csv_file, 'rb') as f:
         reader = csv.reader(f)
