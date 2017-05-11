@@ -1,6 +1,6 @@
 /*****************************************************************************
  * FILE:    GRACE VIEWER MAIN.JS
- * DATE:    4 May 2017
+ * DATE:    11 May 2017
  * AUTHOR: Sarva Pulla
  * COPYRIGHT: (c) Brigham Young University 2017
  * LICENSE: BSD 2-Clause
@@ -17,20 +17,14 @@ var LIBRARY_OBJECT = (function() {
     /************************************************************************
      *                      MODULE LEVEL / GLOBAL VARIABLES
      *************************************************************************/
-    var chart,
-        current_layer,
+    var current_layer,
         element,
         layers,
         layers_dict,
-        gs_layer_json,
-        gs_layer_list,
         map,
         popup,
         public_interface, // Object returned by the module
-        range,
-        range_min,
-        range_max,
-        tracker,
+        slider_max,
         wms_source,
         wms_layer;
 
@@ -48,15 +42,7 @@ var LIBRARY_OBJECT = (function() {
      *************************************************************************/
     init_vars = function(){
         var $layers_element = $('#layers');
-        gs_layer_json = $layers_element.attr('data-layers');
-        gs_layer_list = JSON.parse(gs_layer_json);
-        range = $layers_element.attr('data-range');
-        range = JSON.parse(range);
-        tracker = $layers_element.attr('data-tracker');
-        tracker = JSON.parse(tracker);
-        range_min = range[0];
-        range_max = range[1];
-        chart = $(".highcharts-plot").highcharts();
+        slider_max = $layers_element.attr('data-slider-max');
     };
 
 
@@ -133,7 +119,6 @@ var LIBRARY_OBJECT = (function() {
             });
             map.getTargetElement().style.cursor = hit ? 'pointer' : '';
         });
-
     };
 
     init_map = function(){
@@ -146,13 +131,13 @@ var LIBRARY_OBJECT = (function() {
         });
         var fullScreenControl = new ol.control.FullScreen();
         var view = new ol.View({
-            center: [9495552.56, 3298233.44],
+            center: [15584728.7111+11131949.0793+11131949.0793,1689200.13961],
             projection: projection,
-            zoom: 6
+            zoom: 2
         });
-        wms_source = new ol.source.TileWMS();
+        wms_source = new ol.source.ImageWMS();
 
-        wms_layer = new ol.layer.Tile({
+        wms_layer = new ol.layer.Image({
             source: wms_source
         });
         layers = [baseLayer,wms_layer];
@@ -182,14 +167,13 @@ var LIBRARY_OBJECT = (function() {
         // gs_layer_list.forEach(function(item){
         map.removeLayer(wms_layer);
         var store_name = $("#select_layer").find('option:selected').val();
-        // var layer_name = 'grace:'+item[0]+'_nepal';
-        var layer_name = 'grace:'+store_name;
+        var layer_name = 'globalgrace:'+store_name;
         var sld_string = '<StyledLayerDescriptor version="1.0.0"><NamedLayer><Name>'+layer_name+'</Name><UserStyle><FeatureTypeStyle><Rule>\
         <RasterSymbolizer> \
         <ColorMap> \
-        <ColorMapEntry color="#000000" quantity="'+range_min+'" label="nodata" opacity="0.0" /> \
+        <ColorMapEntry color="#000000" quantity="-50" label="nodata" opacity="0.0" /> \
         <ColorMapEntry color="#FF0000" quantity="0" label="label1" opacity="0.4"/>\
-        <ColorMapEntry color="#0000FF" quantity="'+range_max+'" label="label2" opacity="0.4"/>\
+        <ColorMapEntry color="#0000FF" quantity="50" label="label2" opacity="0.4"/>\
         </ColorMap>\
         </RasterSymbolizer>\
         </Rule>\
@@ -198,31 +182,30 @@ var LIBRARY_OBJECT = (function() {
         </NamedLayer>\
         </StyledLayerDescriptor>';
 
-        wms_source = new ol.source.TileWMS({
+        wms_source = new ol.source.ImageWMS({
             url: 'http://127.0.0.1:8181/geoserver/wms',
             params: {'LAYERS':layer_name,'SLD_BODY':sld_string},
             serverType: 'geoserver',
             crossOrigin: 'Anonymous'
         });
 
-        wms_layer = new ol.layer.Tile({
+        wms_layer = new ol.layer.Image({
             source: wms_source
         });
 
         map.addLayer(wms_layer);
 
-
     };
 
     update_wms = function(date_str){
         // map.removeLayer(wms_layer);
-        var layer_name = 'grace:'+date_str;
+        var layer_name = 'globalgrace:'+date_str;
         var sld_string = '<StyledLayerDescriptor version="1.0.0"><NamedLayer><Name>'+layer_name+'</Name><UserStyle><FeatureTypeStyle><Rule>\
         <RasterSymbolizer> \
         <ColorMap> \
-        <ColorMapEntry color="#000000" quantity="'+range_min+'" label="nodata" opacity="0.0" /> \
+        <ColorMapEntry color="#000000" quantity="-50" label="nodata" opacity="0.0" /> \
         <ColorMapEntry color="#FF0000" quantity="0" label="label1" opacity="0.4"/>\
-        <ColorMapEntry color="#0000FF" quantity="'+range_max+'" label="label2" opacity="0.4"/>\
+        <ColorMapEntry color="#0000FF" quantity="50" label="label2" opacity="0.4"/>\
         </ColorMap>\
         </RasterSymbolizer>\
         </Rule>\
@@ -231,46 +214,16 @@ var LIBRARY_OBJECT = (function() {
         </NamedLayer>\
         </StyledLayerDescriptor>';
 
-        // wms_source = new ol.source.TileWMS({
-        //     url: 'http://tethys.byu.edu:8181/geoserver/wms',
-        //     params: {'LAYERS':layer_name,'SLD_BODY':sld_string},
-        //     serverType: 'geoserver',
-        //     crossOrigin: 'Anonymous'
-        // });
-        //
-        // wms_layer = new ol.layer.Tile({
-        //     source: wms_source
-        // });
-        //
-        // map.addLayer(wms_layer);
-        // map.render();
-        wms_source.updateParams({'LAYERS':layer_name,'SLD_BODY':sld_string})
+        wms_source.updateParams({'LAYERS':layer_name,'SLD_BODY':sld_string});
 
     };
-
-
-
-    // $("#view-animation").click(function(){
-    //     $("#day_selector").hide();
-    //     $("#view-animation").hide();
-    //     $("#view-timestep").removeClass("hidden");
-    //     map.removeLayer(wms_layer);
-    //     generate_slider();
-    // });
-    //
-    // $("#view-timestep").click(function(){
-    //     $("#day_selector").show();
-    //     $("#view-animation").show();
-    //     $("#view-timestep").addClass("hidden");
-    //     add_wms();
-    // });
 
     init_slider = function(){
 
         $( "#slider" ).slider({
             value:1,
             min: 0,
-            max: gs_layer_list.length - 1,
+            max: slider_max - 1,
             step: 1, //Assigning the slider step based on the depths that were retrieved in the controller
             animate:"fast",
             slide: function( event, ui ) {
@@ -282,48 +235,7 @@ var LIBRARY_OBJECT = (function() {
         });
 
     };
-    graph_animation = function(){
-        // var ;
-        // // console.log(chart.series[0].data[0]);
-        // if(chart.series[1].data[0].x > 1471737600000.0){
-        //     var x = 1018915200000.0;
-        // }else{
-        //     var x = chart.series[1].data[0].x + 114717376000;
-        //     chart.series[1].setData([[x,-36],[x,36]]);
-        //     setTimeout(graph_animation,1000);
-        // }
-    };
 
-    new_layer = function(){
-
-
-        var sld_string = '<StyledLayerDescriptor version="1.0.0"><NamedLayer><Name>globalgrace:2011_08_16</Name><UserStyle><FeatureTypeStyle><Rule>\
-        <RasterSymbolizer> \
-        <ColorMap> \
-        <ColorMapEntry color="#000000" quantity="'+range_min+'" label="nodata" opacity="0.0" /> \
-        <ColorMapEntry color="#FF0000" quantity="0" label="label1" opacity="0.6"/>\
-        <ColorMapEntry color="#0000FF" quantity="'+range_max+'" label="label2" opacity="0.6"/>\
-        </ColorMap>\
-        </RasterSymbolizer>\
-        </Rule>\
-        </FeatureTypeStyle>\
-        </UserStyle>\
-        </NamedLayer>\
-        </StyledLayerDescriptor>';
-
-
-        var new_wms_source = new ol.source.ImageWMS({
-            url: 'http://127.0.0.1:8181/geoserver/wms',
-            params: {'LAYERS':'globalgrace:2011_08_16','SLD_BODY':sld_string},
-            serverType: 'geoserver',
-            crossOrigin: 'Anonymous'
-        });
-
-        var new_wms_layer = new ol.layer.Image({
-            source: new_wms_source
-        });
-        map.addLayer(new_wms_layer);
-    };
 
     /************************************************************************
      *                        DEFINE PUBLIC INTERFACE
@@ -345,24 +257,12 @@ var LIBRARY_OBJECT = (function() {
         init_events();
         init_vars();
         init_slider();
-        // new_layer();
-
 
         $("#select_layer").change(function(){
             add_wms();
-            // var selected_option = $(this).find('option:selected').val();
-            // var lyr_str = 'grace:'+selected_option;
-            // map.addLayer(layers_dict[lyr_str]);
         }).change();
 
-        // $("#slider").on("slidechange", function(event, ui) {
-        //
-        //               $( "#grace-date" ).val(result['map_forecast'][ui.value - 1][0]); //The text below the slider
-        //               var decimal_value = range_value.toString().split(".").join("");
-        //
-        //           });
-
-        var animationDelay = 1000;
+         var animationDelay = 1000;
         var sliderInterval = {};
 
         $(".btn-run").on("click", function() {
@@ -372,7 +272,7 @@ var LIBRARY_OBJECT = (function() {
             sliderInterval = setInterval(function() {
                 sliderVal += 1;
                 $("#slider").slider("value", sliderVal);
-                if (sliderVal===gs_layer_list.length - 1) sliderVal=0;
+                if (sliderVal=== slider_max - 1) sliderVal=0;
             }, animationDelay);
         });
         $(".btn-stop").on("click", function() {
@@ -381,14 +281,13 @@ var LIBRARY_OBJECT = (function() {
             });
 
         $("#slider").on("slidechange", function(event, ui) {
-            var x = tracker[ui.value];
-            chart.series[1].setData([[x,-50],[x,50]]);
             var date_text = $("#select_layer option")[ui.value].text;
             $( "#grace-date" ).val(date_text); //Get the value from the slider
             var date_value = $("#select_layer option")[ui.value].value;
             update_wms(date_value);
 
         });
+
     });
 
     return public_interface;

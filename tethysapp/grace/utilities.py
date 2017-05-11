@@ -14,110 +14,147 @@ import requests
 import csv
 from grace import get_netcdf_info
 
+#
+# def create_global_geotiffs(file_dir,geotiff_dir):
+#
+#     # Specify the relative file location
+#     start_date = '01/01/2002'  # Date that GRACE data is available from
+#
+#     for file in os.listdir(file_dir): #Looping through the directory
+#         if file is None:
+#             print "No files to parse"
+#             sys.exit()
+#         nc_fid = Dataset(file_dir+file,'r') #Reading the netcdf file
+#         nc_var = nc_fid.variables #Get the netCDF variables
+#         nc_var.keys() #Getting variable keys
+#         time = nc_var['time'][:] #Get the all the avaialable timesteps. Timestep increment value is x days after startdate
+#
+#         lwe_thickness = nc_var['lwe_thickness'][:,:,:] #Array with the all the values for lwe_thickness
+#
+#         date_str = datetime.datetime.strptime(start_date, "%m/%d/%Y") #Start Date string.
+#
+#
+#         var = "lwe_thickness" #Specifying the variable key. This parameter will be used to retrieve information about the netCDF file
+#         xsize, ysize, GeoT, Projection, NDV = get_netcdf_info(file_dir+file, var) #Get information about the netCDF file
+#
+#         ts_one = nc_var['lwe_thickness'][0,:,:]
+#
+#
+#
+#
+#         unique_vals = set()
+#         for i in ts_one:
+#             for j in i:
+#                 if float(j) not in unique_vals:
+#                     unique_vals.add(float(j))
+#
+#         x = []
+#         y = []
+#         for i in unique_vals:
+#             idx = np.where(nc_var['lwe_thickness'][0,:,:] == float(i))
+#             x = x + idx[0].tolist()
+#             y = y + idx[1].tolist()
+#
+#         x_y = zip(x,y)
+#
+#         grace_points = []
+#         for i in x_y:
+#             grace_json = {}  # Empty json object to store the corresponding latitude, longitude and lwe thickness value
+#             latitude = nc_var['lat'][i[0]]
+#             longitude = nc_var['lon'][i[1]]
+#             thickness = nc_var['lwe_thickness'][0, i[0], i[1]]
+#
+#             # Saving all the values to the jon dictionary
+#             grace_json["latitude"] = latitude
+#             grace_json["longitude"] = longitude
+#             grace_json["thickness"] = thickness
+#             grace_points.append(grace_json)
+#
+#             # Creating the shapefile from the json dictionaries, then converting it to a raster
+#         try:
+#             file_name = 'grace_sites'
+#             temp_dir = tempfile.mkdtemp()  # Creating a temporary directory to save the shapefile
+#             file_location = temp_dir + "/" + file_name
+#
+#             w = sf.Writer(sf.POINT)  # Creating a point shapefile
+#             w.field('thickness')  # Creating an attribute field called thickness for storing the variable value
+#
+#             # Looping through the list of json dictionaries to create points
+#             for item in grace_points:
+#                 w.point(float(item['longitude']), float(item['latitude']))  # Creating the point
+#                 w.record(item['thickness'], 'Point')  # Assigning value to the point
+#             w.save(file_location)
+#
+#             # Creating a projection file for the shapefile
+#             prj = open("%s.prj" % file_location, "w")
+#             epsg = 'GEOGCS["WGS84",DATUM["WGS_1984",SPHEROID["WGS84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
+#             prj.write(epsg)
+#             prj.close()
+#
+#             # Begin the conveersion to a raster
+#
+#             NoData_value = -9999  # Specifying no data value
+#             shp_file = file_location + ".shp"  # Find the shapefile location
+#
+#             out_loc = geotiff_dir + "tsone" + ".tif"  # Specify the GeoTiff name and output
+#
+#             source_ds = ogr.Open(shp_file)  # Reading the shapefile
+#             source_layer = source_ds.GetLayer()  # Getting the actual layer
+#             spatialRef = source_layer.GetSpatialRef()  # Get the Spatial Reference
+#
+#             raster_layer = gdal.GetDriverByName('GTiff').Create(out_loc, xsize, ysize, 1,
+#                                                                 gdal.GDT_Float32)  # Initializing an empty GeoTiff
+#             raster_layer.SetProjection(
+#                 spatialRef.ExportToWkt())  # Set the projection based on the shapefile projection
+#             raster_layer.SetGeoTransform(GeoT)  # Set the Geotransform.
+#             band = raster_layer.GetRasterBand(1)  # Specifying the number of bands
+#             band.SetNoDataValue(NoData_value)  # Setting no data values
+#
+#             band.FlushCache()  # This call will recover memory used to cache data blocks for this raster band, and ensure that new requests are referred to the underlying driver.
+#
+#             gdal.RasterizeLayer(raster_layer, [1], source_layer,
+#                                 options=["ATTRIBUTE=thickness"])  # Create the GeoTiff layer
+#         except:
+#             print "Error parsing the data. Please check directory and try again."
+#             sys.exit()
+#             return False
 
-def create_global_geotiffs(file_dir,geotiff_dir):
+def create_global_tiff(var_name,xsize,ysize,GeoT,NDV):
 
-    # Specify the relative file location
-    start_date = '01/01/2002'  # Date that GRACE data is available from
+    # NewFile = '/home/tethys/geotiff_global/'+var_name+'.tif'
 
-    for file in os.listdir(file_dir): #Looping through the directory
-        if file is None:
-            print "No files to parse"
-            sys.exit()
-        nc_fid = Dataset(file_dir+file,'r') #Reading the netcdf file
-        nc_var = nc_fid.variables #Get the netCDF variables
-        nc_var.keys() #Getting variable keys
-        time = nc_var['time'][:] #Get the all the avaialable timesteps. Timestep increment value is x days after startdate
+    start_date = '01/01/2002'
 
-        lwe_thickness = nc_var['lwe_thickness'][:,:,:] #Array with the all the values for lwe_thickness
+    nc_fid = Dataset('/home/tethys/netcdf/grace.nc', 'r')  # Reading the netcdf file
+    nc_var = nc_fid.variables #Get the netCDF variables
+    nc_var.keys() #Getting variable keys
 
-        date_str = datetime.datetime.strptime(start_date, "%m/%d/%Y") #Start Date string.
+    time = nc_var['time'][:]
 
+    date_str = datetime.datetime.strptime(start_date, "%m/%d/%Y")  # Start Date string.
 
-        var = "lwe_thickness" #Specifying the variable key. This parameter will be used to retrieve information about the netCDF file
-        xsize, ysize, GeoT, Projection, NDV = get_netcdf_info(file_dir+file, var) #Get information about the netCDF file
+    for timestep, v in enumerate(time):
 
-        ts_one = nc_var['lwe_thickness'][0,:,:]
+        current_time_step = nc_var['lwe_thickness'][timestep, :, :]  # Getting the index of the current timestep
 
+        end_date = date_str + datetime.timedelta(days=float(v))  # Actual human readable date of the timestep
 
+        ts_file_name = end_date.strftime("%Y_%m_%d")  # Changing the date string format
 
+        data = nc_var['lwe_thickness'][timestep,:,:]
+        data = data[::-1, :]
+        driver = gdal.GetDriverByName('GTiff')
+        DataSet = driver.Create('/home/tethys/geotiff_global/'+ts_file_name+'.tif',xsize,ysize,1, gdal.GDT_Float32)
+        DataSet.SetGeoTransform(GeoT)
+        srs=osr.SpatialReference()
+        srs.ImportFromEPSG(4326)
+        DataSet.SetProjection(srs.ExportToWkt())
 
-        unique_vals = set()
-        for i in ts_one:
-            for j in i:
-                if float(j) not in unique_vals:
-                    unique_vals.add(float(j))
+        DataSet.GetRasterBand(1).WriteArray(data)
+        DataSet.GetRasterBand(1).SetNoDataValue(NDV)
+        DataSet.FlushCache()
 
-        x = []
-        y = []
-        for i in unique_vals:
-            idx = np.where(nc_var['lwe_thickness'][0,:,:] == float(i))
-            x = x + idx[0].tolist()
-            y = y + idx[1].tolist()
-
-        x_y = zip(x,y)
-
-        grace_points = []
-        for i in x_y:
-            grace_json = {}  # Empty json object to store the corresponding latitude, longitude and lwe thickness value
-            latitude = nc_var['lat'][i[0]]
-            longitude = nc_var['lon'][i[1]]
-            thickness = nc_var['lwe_thickness'][0, i[0], i[1]]
-
-            # Saving all the values to the jon dictionary
-            grace_json["latitude"] = latitude
-            grace_json["longitude"] = longitude
-            grace_json["thickness"] = thickness
-            grace_points.append(grace_json)
-
-            # Creating the shapefile from the json dictionaries, then converting it to a raster
-        try:
-            file_name = 'grace_sites'
-            temp_dir = tempfile.mkdtemp()  # Creating a temporary directory to save the shapefile
-            file_location = temp_dir + "/" + file_name
-
-            w = sf.Writer(sf.POINT)  # Creating a point shapefile
-            w.field('thickness')  # Creating an attribute field called thickness for storing the variable value
-
-            # Looping through the list of json dictionaries to create points
-            for item in grace_points:
-                w.point(float(item['longitude']), float(item['latitude']))  # Creating the point
-                w.record(item['thickness'], 'Point')  # Assigning value to the point
-            w.save(file_location)
-
-            # Creating a projection file for the shapefile
-            prj = open("%s.prj" % file_location, "w")
-            epsg = 'GEOGCS["WGS84",DATUM["WGS_1984",SPHEROID["WGS84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
-            prj.write(epsg)
-            prj.close()
-
-            # Begin the conveersion to a raster
-
-            NoData_value = -9999  # Specifying no data value
-            shp_file = file_location + ".shp"  # Find the shapefile location
-
-            out_loc = geotiff_dir + "tsone" + ".tif"  # Specify the GeoTiff name and output
-
-            source_ds = ogr.Open(shp_file)  # Reading the shapefile
-            source_layer = source_ds.GetLayer()  # Getting the actual layer
-            spatialRef = source_layer.GetSpatialRef()  # Get the Spatial Reference
-
-            raster_layer = gdal.GetDriverByName('GTiff').Create(out_loc, xsize, ysize, 1,
-                                                                gdal.GDT_Float32)  # Initializing an empty GeoTiff
-            raster_layer.SetProjection(
-                spatialRef.ExportToWkt())  # Set the projection based on the shapefile projection
-            raster_layer.SetGeoTransform(GeoT)  # Set the Geotransform.
-            band = raster_layer.GetRasterBand(1)  # Specifying the number of bands
-            band.SetNoDataValue(NoData_value)  # Setting no data values
-
-            band.FlushCache()  # This call will recover memory used to cache data blocks for this raster band, and ensure that new requests are referred to the underlying driver.
-
-            gdal.RasterizeLayer(raster_layer, [1], source_layer,
-                                options=["ATTRIBUTE=thickness"])  # Create the GeoTiff layer
-        except:
-            print "Error parsing the data. Please check directory and try again."
-            sys.exit()
-            return False
+        DataSet = None
 
 def get_netcdf_info_global(filename,var_name):
 
@@ -141,10 +178,23 @@ def get_netcdf_info_global(filename,var_name):
         src_ds_sd = None #Closing the file
         nc_file = None #Closing the file
 
+        return xsize,ysize,GeoT,NDV #Return data that will be used to convert the shapefile
 
-        return xsize,ysize,GeoT,Projection,NDV #Return data that will be used to convert the shapefile
+#Upload GeoTiffs to geoserver
+def upload__global_tiff(dir,geoserver_rest_url,workspace):
 
+    headers = {
+        'Content-type': 'image/tiff',
+    }
 
+    for file in os.listdir(dir): #Looping through all the files in the given directory
+        if file is None:
+            print "No files. Please check directory and try again."
+            sys.exit()
+        data = open(dir+file,'rb').read() #Read the file
+        store_name = file.split('.')[0]  #Creating the store name dynamically
+        request_url = '{0}/workspaces/{1}/coveragestores/{2}/file.geotiff'.format(geoserver_rest_url,workspace,store_name) #Creating the rest url
+        requests.put(request_url,headers=headers,data=data,auth=('admin','geoserver')) #Creating the resource on the geoserver
 
 def clip_raster():
     geoms = [{

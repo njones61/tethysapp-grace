@@ -5,8 +5,8 @@ import csv, os
 from datetime import datetime
 from tethys_sdk.services import get_spatial_dataset_engine
 import urlparse
-#from grace import *
-#from utilities import *
+from grace import *
+from utilities import *
 import json,time
 from .app import Grace
 
@@ -21,14 +21,14 @@ def home(request):
     # create_global_geotiffs(file_dir,output_dir)
     # infile = '/home/tethys/netcdf/grace.nc'
     # var_name = 'lwe_thickness'
-    # xsize, ysize, GeoT, Projection, NDV = get_netcdf_info_global(infile,var_name)
-    # create_global_tiff(var_name,xsize,ysize,GeoT,Projection)
+    # xsize, ysize, GeoT,NDV= get_netcdf_info_global(infile,var_name)
+    # create_global_tiff(var_name,xsize,ysize,GeoT,NDV)
 
     # create_geotiffs(file_dir,output_dir)
-    # region = 'nepal'
+    # file_dir = '/home/tethys/geotiff_global/'
     # geoserver_rest_url = 'http://tethys.byu.edu:8181/geoserver/rest'
-    # workspace = 'grace'
-    # upload_tiff(file_dir, region, geoserver_rest_url, workspace)
+    # workspace = 'globalgrace'
+    # upload__global_tiff(file_dir, geoserver_rest_url, workspace)
     # file_dir = '/home/tethys/netcdf/'
     # output_dir = '/home/tethys/'
     # get_max_min(file_dir,output_dir)
@@ -57,7 +57,7 @@ def nepal_graph(request):
     x_tracker = []
     formatter_string = "%m/%d/%Y"
     for item in csvlist:
-        mydate = datetime.strptime(item[0], formatter_string)
+        mydate = datetime.datetime.strptime(item[0], formatter_string)
         mydate = time.mktime(mydate.timetuple())*1000
         volume_time_series.append([mydate, float(item[1])])
         volume.append(float(item[1]))
@@ -93,13 +93,13 @@ def nepal_graph(request):
     stores = geoserver_engine.list_stores(workspace='grace')
 
     grace_layer_options = []
-    sorted_stores = sorted(stores['result'],key=lambda x:datetime.strptime(x,'%Y_%m_%d_nepal'))
+    sorted_stores = sorted(stores['result'],key=lambda x:datetime.datetime.strptime(x,'%Y_%m_%d_nepal'))
     for store in sorted_stores:
 
         year = int(store.split('_')[0])
         month = int(store.split('_')[1])
         day = int(store.split('_')[2])
-        date_str = datetime(year,month,day)
+        date_str = datetime.datetime(year,month,day)
         date_str = date_str.strftime("%Y %B %d")
         grace_layer_options.append([date_str,store])
 
@@ -119,10 +119,59 @@ def nepal_graph(request):
     legend_json = json.dumps(legend_list)
     x_tracker = json.dumps(x_tracker)
 
+
+
     context = {'grace_plot': grace_plot,'select_layer':select_layer,'layers_json':legend_json,'range':range,'slider_max':slider_max,'x_tracker':x_tracker}
 
     return render(request, 'grace/nepal_graph.html', context)
 
+@login_required
+def global_map(request):
+    view_options = MVView(
+        projection='EPSG:4326',
+        center=[257.3, 40],
+        zoom=3.5,
+        maxZoom=28,
+        minZoom=1
+    )
+
+
+
+    # Connecting to the Geoserver
+    geoserver_engine = get_spatial_dataset_engine(name='default')
+    stores = geoserver_engine.list_stores(workspace='globalgrace')
+
+    grace_layer_options = []
+    sorted_stores = sorted(stores['result'], key=lambda x: datetime.datetime.strptime(x, '%Y_%m_%d'))
+    for store in sorted_stores:
+        year = int(store.split('_')[0])
+        month = int(store.split('_')[1])
+        day = int(store.split('_')[2])
+        date_str = datetime.datetime(year, month, day)
+        date_str = date_str.strftime("%Y %B %d")
+        grace_layer_options.append([date_str, store])
+
+    slider_max = len(grace_layer_options)
+
+    select_layer = SelectInput(display_text='Select a day',
+                               name='select_layer',
+                               multiple=False,
+                               options=grace_layer_options, )
+
+    map_view_options = MapView(
+        height='500px',
+        width='100%',
+        controls=['ZoomSlider', 'Rotate', 'FullScreen',
+                  {'MousePosition': {'projection': 'EPSG:4326'}}],
+        layers=[],
+        view=view_options,
+        basemap='OpenStreetMap'
+    )
+
+
+    context = {'map_view_options':map_view_options,'select_layer':select_layer,'slider_max':slider_max}
+
+    return render(request, 'grace/global_map.html', context)
 @login_required
 def home_graph(request, id):
     """
