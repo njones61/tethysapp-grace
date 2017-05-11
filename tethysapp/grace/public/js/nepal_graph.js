@@ -199,7 +199,7 @@ var LIBRARY_OBJECT = (function() {
         </StyledLayerDescriptor>';
 
         wms_source = new ol.source.TileWMS({
-            url: 'http://127.0.0.1:8181/geoserver/wms',
+            url: 'http://tethys.byu.edu:8181/geoserver/wms',
             params: {'LAYERS':layer_name,'SLD_BODY':sld_string},
             serverType: 'geoserver',
             crossOrigin: 'Anonymous'
@@ -313,7 +313,7 @@ var LIBRARY_OBJECT = (function() {
 
 
         var new_wms_source = new ol.source.ImageWMS({
-            url: 'http://127.0.0.1:8181/geoserver/wms',
+            url: 'http://tethys.byu.edu:8181/geoserver/wms',
             params: {'LAYERS':'globalgrace:2011_08_16','SLD_BODY':sld_string},
             serverType: 'geoserver',
             crossOrigin: 'Anonymous'
