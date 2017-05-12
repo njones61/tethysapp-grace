@@ -8,7 +8,7 @@ class Grace(TethysAppBase):
 
     name = 'Grace'
     index = 'grace:home'
-    icon = 'grace/images/icon.gif'
+    icon = 'grace/images/logo.jpg'
     package = 'grace'
     root_url = 'grace'
     color = '#e74c3c'

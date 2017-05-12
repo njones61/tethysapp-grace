@@ -150,9 +150,9 @@ var LIBRARY_OBJECT = (function() {
             projection: projection,
             zoom: 6
         });
-        wms_source = new ol.source.TileWMS();
+        wms_source = new ol.source.ImageWMS();
 
-        wms_layer = new ol.layer.Tile({
+        wms_layer = new ol.layer.Image({
             source: wms_source
         });
         layers = [baseLayer,wms_layer];
@@ -198,14 +198,14 @@ var LIBRARY_OBJECT = (function() {
         </NamedLayer>\
         </StyledLayerDescriptor>';
 
-        wms_source = new ol.source.TileWMS({
+        wms_source = new ol.source.ImageWMS({
             url: 'http://tethys.byu.edu:8181/geoserver/wms',
             params: {'LAYERS':layer_name,'SLD_BODY':sld_string},
             serverType: 'geoserver',
             crossOrigin: 'Anonymous'
         });
 
-        wms_layer = new ol.layer.Tile({
+        wms_layer = new ol.layer.Image({
             source: wms_source
         });
 
